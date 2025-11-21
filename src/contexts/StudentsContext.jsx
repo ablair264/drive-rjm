@@ -53,14 +53,14 @@ export function StudentsProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
-  const createStudent = async (studentData) => {
+  const createStudent = async (studentData, imageFile = null) => {
     // Check email uniqueness
     const emailCheck = await checkEmailExists(studentData.email);
     if (emailCheck.exists) {
       return { success: false, error: 'A student with this email already exists' };
     }
 
-    return await createStudentFirebase(studentData);
+    return await createStudentFirebase(studentData, imageFile);
   };
 
   const updateStudent = async (studentId, updates) => {

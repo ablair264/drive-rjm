@@ -11,6 +11,8 @@ export default function CreateStudentModal({ isOpen, onClose, onStudentCreated }
   const [errors, setErrors] = useState({});
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [showEmergencyContact, setShowEmergencyContact] = useState(false);
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageFile, setImageFile] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -75,7 +77,7 @@ export default function CreateStudentModal({ isOpen, onClose, onStudentCreated }
       postcode: formatPostcode(formData.postcode)
     };
 
-    const result = await createStudent(studentData);
+    const result = await createStudent(studentData, imageFile);
 
     setLoading(false);
 
@@ -113,6 +115,24 @@ export default function CreateStudentModal({ isOpen, onClose, onStudentCreated }
     setErrors({});
     setShowAdditionalInfo(false);
     setShowEmergencyContact(false);
+    setImagePreview('');
+    setImageFile(null);
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearUploadedImage = () => {
+    setImageFile(null);
+    setImagePreview('');
   };
 
   return (
@@ -219,6 +239,50 @@ export default function CreateStudentModal({ isOpen, onClose, onStudentCreated }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-learner-red focus:border-transparent"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Profile Image */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-dark mb-2">Student Photo (optional)</h3>
+              <p className="text-sm text-medium-grey mb-3">
+                Upload a portrait photo or paste an image URL. Uploaded files are stored in Firebase Storage.
+              </p>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={formData.image}
+                  onChange={(e) => handleChange('image', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-learner-red focus:border-transparent"
+                  placeholder="https://example.com/photo.jpg"
+                />
+                <div className="flex items-center gap-3">
+                  <label className="cursor-pointer bg-light-grey px-4 py-2 border border-dashed border-gray-300 text-sm font-semibold text-dark hover:border-learner-red transition-colors">
+                    Upload file
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageFileChange} />
+                  </label>
+                  {imageFile && (
+                    <button
+                      type="button"
+                      className="text-sm text-learner-red font-semibold"
+                      onClick={clearUploadedImage}
+                    >
+                      Remove uploaded file
+                    </button>
+                  )}
+                </div>
+                {(imagePreview || formData.image) && (
+                  <div>
+                    <p className="text-xs text-medium-grey mb-1">Preview:</p>
+                    <div className="h-40 w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                      <img
+                        src={imagePreview || formData.image}
+                        alt="Student preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

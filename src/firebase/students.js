@@ -12,12 +12,21 @@ import {
   serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { db } from './config';
+import { db, storage } from './config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const STUDENTS_COLLECTION = 'students';
 
 // Create a new student
-export async function createStudent(studentData) {
+async function uploadStudentImage(file, studentId) {
+  const extension = file.name?.split('.').pop() || 'jpg';
+  const storageRef = ref(storage, `students/${studentId}/profile-${Date.now()}.${extension}`);
+  await uploadBytes(storageRef, file);
+  const downloadUrl = await getDownloadURL(storageRef);
+  return { url: downloadUrl, path: storageRef.fullPath };
+}
+
+export async function createStudent(studentData, imageFile = null) {
   try {
     const docRef = await addDoc(collection(db, STUDENTS_COLLECTION), {
       ...studentData,
@@ -29,8 +38,24 @@ export async function createStudent(studentData) {
         test_date: null
       },
       created_at: serverTimestamp(),
+      image: studentData.image || '',
+      image_path: '',
       updated_at: serverTimestamp()
     });
+
+    if (typeof File !== 'undefined' && imageFile instanceof File) {
+      try {
+        const uploaded = await uploadStudentImage(imageFile, docRef.id);
+        await updateDoc(docRef, {
+          image: uploaded.url,
+          image_path: uploaded.path,
+          updated_at: serverTimestamp()
+        });
+      } catch (uploadError) {
+        console.error('Error uploading student image:', uploadError);
+      }
+    }
+
     return { success: true, id: docRef.id };
   } catch (error) {
     console.error('Error creating student:', error);

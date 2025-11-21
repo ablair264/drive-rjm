@@ -6,6 +6,8 @@ import './index.css'
 import { AuthProvider } from './contexts/AuthContext'
 import { StudentsProvider } from './contexts/StudentsContext'
 import { LessonsProvider } from './contexts/LessonsContext'
+import { RecentlyPassedProvider } from './contexts/RecentlyPassedContext'
+import { EnquiriesProvider } from './contexts/EnquiriesContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -13,7 +15,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <StudentsProvider>
           <LessonsProvider>
-            <App />
+            <RecentlyPassedProvider>
+              <EnquiriesProvider>
+                <App />
+              </EnquiriesProvider>
+            </RecentlyPassedProvider>
           </LessonsProvider>
         </StudentsProvider>
       </AuthProvider>

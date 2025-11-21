@@ -101,6 +101,31 @@ Update business information, schemas, and meta tags in:
 - `src/components/SEO.jsx` (JSON-LD structured data)
 - `index.html` (meta tags, Open Graph, Twitter Cards)
 
+## Firebase Admin Setup
+
+The admin dashboard stores students and lessons in Firestore. A helper script seeds those collections with template documents so Firestore is initialised with the expected structure.
+
+1. **Service account**: Download a Firebase service-account JSON for the project and save it as `ServiceAccountKey.json` in the repo root (or point to another path via the `FIREBASE_SERVICE_ACCOUNT` env var).
+2. **Install deps**: `npm install` (installs `firebase-admin`).
+3. **Seed Firestore**:
+   ```bash
+   npm run setup:firestore
+   # or specify a custom credential file
+   FIREBASE_SERVICE_ACCOUNT=/path/to/key.json npm run setup:firestore
+   ```
+   The script creates template docs for `students`, `lessons`, `recentlyPassed`, and `enquiries` collections so the dashboard has sample data.
+4. **Deploy indexes**: Firestore requires composite indexes for the dashboard queries. Deploy them with:
+   ```bash
+   firebase deploy --only firestore:indexes
+   ```
+   (Uses `firebase.json` + `firestore.indexes.json`. Pass `--project <project-id>` if the Firebase CLI isn’t already pointing at the right project.)
+
+### Student Photos & Enquiries
+
+- Student portraits are uploaded to Firebase Storage automatically when you add a student via the admin dashboard. The resulting download URL is stored in the `image` field of each `students` document.
+- You can also paste an existing image URL into the student form; uploaded files take precedence over typed URLs.
+- All public-facing enquiry forms now write directly to the `enquiries` collection in Firestore, so the admin dashboard reflects real submissions in real time.
+
 ## SEO Checklist
 
 - [x] Comprehensive meta tags (title, description, keywords)

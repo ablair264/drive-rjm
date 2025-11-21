@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { addMonths, subMonths, addWeeks, subWeeks } from 'date-fns';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
@@ -13,6 +13,7 @@ import DashboardTab from './Dashboard/DashboardTab';
 import EnquiriesTab from './Enquiries/EnquiriesTab';
 import StudentsTab from './Students/StudentsTab';
 import TestsTab from './Tests/TestsTab';
+import { useEnquiries } from '../../contexts/EnquiriesContext';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -23,22 +24,7 @@ export default function AdminPage() {
   const [showDayDetailModal, setShowDayDetailModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
-  const [enquiries, setEnquiries] = useState([]);
-
-  // Load enquiries from localStorage
-  useEffect(() => {
-    const storedEnquiries = localStorage.getItem('enquiries');
-    if (storedEnquiries) {
-      try {
-        const parsedEnquiries = JSON.parse(storedEnquiries);
-        if (Array.isArray(parsedEnquiries)) {
-          setEnquiries(parsedEnquiries);
-        }
-      } catch (e) {
-        console.error('Error loading enquiries:', e);
-      }
-    }
-  }, []);
+  const { enquiries, loading: enquiriesLoading } = useEnquiries();
 
   // Navigation handlers
   const handlePrevious = () => {
@@ -110,7 +96,7 @@ export default function AdminPage() {
 
           {activeTab === 'enquiries' && (
             <div className="p-8">
-              <EnquiriesTab enquiries={enquiries} />
+              <EnquiriesTab enquiries={enquiries} loading={enquiriesLoading} />
             </div>
           )}
 

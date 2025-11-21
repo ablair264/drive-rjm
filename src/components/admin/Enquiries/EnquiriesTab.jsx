@@ -1,4 +1,10 @@
-export default function EnquiriesTab({ enquiries }) {
+const formatDate = (value) => {
+  if (!value) return '—';
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
+};
+
+export default function EnquiriesTab({ enquiries, loading = false }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -8,7 +14,9 @@ export default function EnquiriesTab({ enquiries }) {
           </div>
           <h3 className="text-xl font-display font-bold text-dark">Latest submissions</h3>
         </div>
-        <span className="text-sm text-medium-grey">{enquiries.length} total</span>
+        <span className="text-sm text-medium-grey">
+          {loading ? 'Loading…' : `${enquiries.length} total`}
+        </span>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -23,10 +31,17 @@ export default function EnquiriesTab({ enquiries }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {enquiries.length === 0 && (
+            {enquiries.length === 0 && !loading && (
               <tr>
                 <td colSpan="6" className="px-4 py-4 text-medium-grey text-center">
                   No enquiries yet.
+                </td>
+              </tr>
+            )}
+            {loading && (
+              <tr>
+                <td colSpan="6" className="px-4 py-4 text-medium-grey text-center">
+                  Loading enquiries...
                 </td>
               </tr>
             )}
@@ -48,7 +63,7 @@ export default function EnquiriesTab({ enquiries }) {
                   {q.source || 'unknown'}
                 </td>
                 <td className="px-4 py-3 text-medium-grey text-xs">
-                  {q.createdAt ? new Date(q.createdAt).toLocaleString() : '—'}
+                  {formatDate(q.createdAt)}
                 </td>
               </tr>
             ))}

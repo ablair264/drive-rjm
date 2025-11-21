@@ -21,7 +21,7 @@ export default function WeekView({ currentDate, onLessonClick }) {
     });
   };
 
-  const getLesson AtTimeSlot = (day, hour) => {
+  const getLessonAtTimeSlot = (day, hour) => {
     const dayLessons = getLessonsForDay(day);
     return dayLessons.find(lesson => {
       const [lessonHour] = lesson.start_time.split(':').map(Number);

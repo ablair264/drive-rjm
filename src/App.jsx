@@ -10,35 +10,8 @@ import SEO from './components/SEO'
 import AdminLogin from './components/admin/AdminLogin'
 import AdminPage from './components/admin/AdminPage'
 import { useAuth } from './contexts/AuthContext'
-
-// Default Recently Passed entries
-const defaultPassed = [
-  {
-    name: 'Sophie, Worcester',
-    tests: 'Passed 1st time',
-    desc: 'Nervous at first, now confident in city traffic and roundabouts.',
-    image: '/driving-instructor-worcester.webp'
-  },
-  {
-    name: 'Adam, Malvern',
-    tests: '2 minors',
-    desc: 'Focused on clutch control and hill starts around Malvern Link.',
-    image: '/rowan-mccann-driving-instructor.webp'
-  },
-  {
-    name: 'Priya, St Peters',
-    tests: 'Passed 1st time',
-    desc: 'Polished mirror-signal routines and complex junctions.',
-    image: '/driving-instructor-worcester.webp'
-  },
-  {
-    name: 'Lewis, WR5',
-    tests: 'Passed 2nd time',
-    desc: 'Confidence boost with mock tests and motorway practice.',
-    image: '/rowan-mccann-driving-instructor.webp'
-  }
-]
-
+import { useRecentlyPassed } from './contexts/RecentlyPassedContext'
+import { useEnquiries } from './contexts/EnquiriesContext'
 
 // Navigation Component
 const Navigation = ({ onBookNowClick }) => {
@@ -337,10 +310,10 @@ const ContactForm = ({ onClose, isModal = false, onSubmit }) => {
     message: ''
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (onSubmit) {
-      onSubmit({
+      await onSubmit({
         ...formData,
         source: isModal ? 'contact-modal' : 'contact-section',
         createdAt: new Date().toISOString()
@@ -881,10 +854,10 @@ const QuickContact = ({ postcodeCheckResult, onSubmit }) => {
     service: ''
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (onSubmit) {
-      onSubmit({
+      await onSubmit({
         ...formData,
         source: 'quick-contact',
         createdAt: new Date().toISOString()
@@ -1378,36 +1351,11 @@ We offer this training in your tow vehicle with either your trailer/caravan or y
 }
 
 // Recently Passed Carousel
-const RecentlyPassed = () => {
-  const people = [
-    {
-      name: 'Sophie, Worcester',
-      tests: 'Passed 1st time',
-      desc: 'Nervous at first, now confident in city traffic and roundabouts.',
-      image: '/driving-instructor-worcester.webp'
-    },
-    {
-      name: 'Adam, Malvern',
-      tests: '2 minors',
-      desc: 'Focused on clutch control and hill starts around Malvern Link.',
-      image: '/rowan-mccann-driving-instructor.webp'
-    },
-    {
-      name: 'Priya, St Peters',
-      tests: 'Passed 1st time',
-      desc: 'Polished mirror-signal routines and complex junctions.',
-      image: '/driving-instructor-worcester.webp'
-    },
-    {
-      name: 'Lewis, WR5',
-      tests: 'Passed 2nd time',
-      desc: 'Confidence boost with mock tests and motorway practice.',
-      image: '/rowan-mccann-driving-instructor.webp'
-    }
-  ]
-
+const RecentlyPassed = ({ entries = [], isLoading = false }) => {
+  const people = entries
   const [index, setIndex] = useState(0)
-  const safeIndex = ((index % people.length) + people.length) % people.length
+  const safeLength = people.length || 1
+  const safeIndex = ((index % safeLength) + safeLength) % safeLength
 
   const goNext = () => setIndex((prev) => prev + 1)
   const goPrev = () => setIndex((prev) => prev - 1)
@@ -1420,13 +1368,27 @@ const RecentlyPassed = () => {
         </AnimatedSectionHeader>
 
         <div className="relative">
+          {isLoading && (
+            <div className="p-8 bg-white rounded-2xl shadow-lg text-center text-medium-grey">
+              Loading recent passes...
+            </div>
+          )}
+
+          {!isLoading && !people.length && (
+            <div className="p-8 bg-white rounded-2xl shadow-lg text-center text-medium-grey border border-gray-100">
+              Learner success stories coming soon. Check back shortly!
+            </div>
+          )}
+
+          {!isLoading && people.length > 0 && (
+            <>
           <div className="overflow-hidden rounded-2xl bg-white shadow-lg border border-gray-100">
             <div
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${safeIndex * 100}%)` }}
             >
-              {people.map((person, idx) => (
-                <div key={person.name} className="w-full flex-shrink-0">
+              {people.map((person) => (
+                <div key={person.id || person.name} className="w-full flex-shrink-0">
                   <div className="grid md:grid-cols-2">
                     <div className="relative h-64 md:h-full">
                       <img
@@ -1460,7 +1422,8 @@ const RecentlyPassed = () => {
           <div className="flex items-center justify-between mt-4">
             <button
               onClick={goPrev}
-              className="inline-flex items-center gap-2 px-4 py-2 border-2 border-dark text-dark font-bold tracking-wide hover:bg-dark hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 border-2 border-dark text-dark font-bold tracking-wide hover:bg-dark hover:text-white transition-colors disabled:opacity-40"
+              disabled={people.length <= 1}
             >
               <ArrowLeftCircle className="w-5 h-5" />
               Prev
@@ -1477,12 +1440,15 @@ const RecentlyPassed = () => {
             </div>
             <button
               onClick={goNext}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-learner-red text-white font-bold tracking-wide hover:bg-dark transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-learner-red text-white font-bold tracking-wide hover:bg-dark transition-colors disabled:opacity-40"
+              disabled={people.length <= 1}
             >
               Next
               <ArrowRightCircle className="w-5 h-5" />
             </button>
           </div>
+          </>
+          )}
         </div>
       </div>
     </AnimatedSection>
@@ -3121,282 +3087,19 @@ const Footer = () => {
   )
 }
 
-
-  const LessonModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-xl font-display font-bold text-dark">Create Lesson</h3>
-          <button onClick={closeLessonModal} className="text-learner-red text-xl font-bold">×</button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-dark mb-1">Student</label>
-            <input
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-              value={lessonForm.student}
-              onChange={(e) => setLessonForm({ ...lessonForm, student: e.target.value })}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-dark mb-1">Date</label>
-              <input
-                type="date"
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-                value={lessonForm.date}
-                onChange={(e) => setLessonForm({ ...lessonForm, date: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-dark mb-1">Duration (mins)</label>
-              <input
-                type="number"
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-                value={lessonForm.duration}
-                onChange={(e) => setLessonForm({ ...lessonForm, duration: Number(e.target.value) })}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-dark mb-1">Start postcode</label>
-              <input
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-                value={lessonForm.startPostcode}
-                onChange={(e) => setLessonForm({ ...lessonForm, startPostcode: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-dark mb-1">End postcode</label>
-              <input
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-                value={lessonForm.endPostcode}
-                onChange={(e) => setLessonForm({ ...lessonForm, endPostcode: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-dark mb-1">Miles</label>
-              <input
-                type="number"
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-                value={lessonForm.miles}
-                onChange={(e) => setLessonForm({ ...lessonForm, miles: Number(e.target.value) })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-dark mb-1">Slot</label>
-              <input
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-                placeholder="HH:MM-HH:MM"
-                value={lessonForm.slot}
-                onChange={(e) => setLessonForm({ ...lessonForm, slot: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-medium-grey">
-              Recommended slot: {computeRecommendedSlot()} • Fuel est: {fuelEstimate().litresUsed}L
-            </p>
-            <button
-              onClick={handleLessonModalSubmit}
-              className="bg-learner-red text-white px-5 py-2 rounded-lg font-semibold tracking-wide shadow"
-            >
-              Save lesson
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
-  const EnquiryModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-xl font-display font-bold text-dark">New Enquiry</h3>
-          <button onClick={closeEnquiryModal} className="text-learner-red text-xl font-bold">×</button>
-        </div>
-        <form onSubmit={handleEnquiryModalSubmit} className="p-6 space-y-4">
-          {['name', 'email', 'phone', 'postcode', 'service'].map((field) => (
-            <div key={field}>
-              <label className="block text-sm font-semibold text-dark mb-1 capitalize">{field}</label>
-              <input
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-                value={enquiryModalData[field]}
-                onChange={(e) => setEnquiryModalData({ ...enquiryModalData, [field]: e.target.value })}
-              />
-            </div>
-          ))}
-          <div>
-            <label className="block text-sm font-semibold text-dark mb-1">Message (optional)</label>
-            <textarea
-              rows="3"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:border-learner-red focus:outline-none"
-              value={enquiryModalData.message}
-              onChange={(e) => setEnquiryModalData({ ...enquiryModalData, message: e.target.value })}
-            />
-          </div>
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={closeEnquiryModal}
-              className="border border-gray-300 px-4 py-2 rounded-lg font-semibold"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="bg-learner-red text-white px-4 py-2 rounded-lg font-semibold"
-            >
-              Add enquiry
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-
-
-  return (
-    <div className="min-h-screen bg-light-grey flex">
-      <aside className="w-72 bg-white border-r-2 border-learner-red shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-white to-light-grey/50" />
-        <div className="relative p-6 flex items-center gap-3">
-          <div className="h-12 w-12 bg-learner-red text-white font-display font-bold flex items-center justify-center clip-angle shadow-lg">
-            RJM
-          </div>
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-medium-grey">Drive RJM</div>
-            <div className="text-xl font-display font-bold text-dark">Admin</div>
-          </div>
-        </div>
-
-        <nav className="relative px-4 space-y-2 mt-4">
-          {navItems.map(({ label, Icon }) => {
-            const isActive = active === label
-            return (
-              <button
-                key={label}
-                onClick={() => setActive(label)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-semibold transition-all ${
-                  isActive
-                    ? 'bg-learner-red text-white shadow-lg'
-                    : 'text-dark hover:bg-light-grey'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {label}
-              </button>
-            )
-          })}
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-semibold text-dark hover:bg-light-grey mt-6"
-          >
-            Logout
-          </button>
-        </nav>
-      </aside>
-
-      <div className="flex-1 p-6 md:p-10 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-display font-bold text-dark">Admin Dashboard</h1>
-            <p className="text-medium-grey mt-1">Manage enquiries, lessons, customers, and test outcomes.</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={openEnquiryModal}
-              className="bg-learner-red text-white px-5 py-3 font-bold tracking-wide clip-angle shadow-lg hover:bg-dark transition-colors"
-            >
-              New Enquiry
-            </button>
-            <button
-              onClick={openLessonModal}
-              className="border-2 border-dark text-dark px-5 py-3 font-bold tracking-wide hover:bg-dark hover:text-white transition-colors"
-            >
-              Create Lesson
-            </button>
-          </div>
-        </div>
-        {renderContent()}
-      </div>
-      {isLessonModalOpen && <LessonModal />}
-      {isEnquiryModalOpen && <EnquiryModal />}
-    </div>
-  )
-}
-
 // Main App Component
 function App() {
   const [showContactModal, setShowContactModal] = useState(false)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [bookingHours, setBookingHours] = useState(2)
   const [postcodeCheckResult, setPostcodeCheckResult] = useState(null)
-  const [recentlyPassed, setRecentlyPassed] = useState(defaultPassed)
-  const [enquiries, setEnquiries] = useState([])
 
   const { isAdminAuthed, loading } = useAuth()
+  const { passes: recentPasses, loading: passesLoading } = useRecentlyPassed()
+  const { addEnquiry } = useEnquiries()
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('recentlyPassed')
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          if (Array.isArray(parsed)) {
-            setRecentlyPassed(parsed)
-          }
-        } catch (e) {
-          // ignore parse errors
-        }
-      }
-      const storedEnquiries = localStorage.getItem('enquiries')
-      if (storedEnquiries) {
-        try {
-          const parsedEnquiries = JSON.parse(storedEnquiries)
-          if (Array.isArray(parsedEnquiries)) {
-            setEnquiries(parsedEnquiries)
-          }
-        } catch (e) {
-          // ignore parse errors
-        }
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('recentlyPassed', JSON.stringify(recentlyPassed))
-    }
-  }, [recentlyPassed])
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('enquiries', JSON.stringify(enquiries))
-    }
-  }, [enquiries])
-
-  const handleAddPassed = (entry, editIndex = null, isDelete = false) => {
-    setRecentlyPassed((prev) => {
-      if (isDelete && editIndex !== null) {
-        return prev.filter((_, idx) => idx !== editIndex)
-      }
-      if (entry && editIndex !== null) {
-        return prev.map((item, idx) => (idx === editIndex ? entry : item))
-      }
-      if (entry) {
-        return [entry, ...prev]
-      }
-      return prev
-    })
-  }
-
-  const handleAddEnquiry = (entry) => {
-    setEnquiries((prev) => [entry, ...prev])
+  const handleAddEnquiry = async (entry) => {
+    await addEnquiry(entry)
   }
 
   const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
@@ -3428,7 +3131,7 @@ function App() {
         <QuickContact postcodeCheckResult={postcodeCheckResult} onSubmit={handleAddEnquiry} />
         <About />
         <Services />
-        <RecentlyPassed entries={recentlyPassed} />
+        <RecentlyPassed entries={recentPasses} isLoading={passesLoading} />
         <Pricing onOpenBookingModal={(hours) => {
           setBookingHours(hours)
           setShowBookingModal(true)

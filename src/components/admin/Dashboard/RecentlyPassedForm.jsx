@@ -1,15 +1,17 @@
 import { useState } from 'react';
 
-export default function RecentlyPassedForm({ passes, onAddPass }) {
+export default function RecentlyPassedForm({ passes, loading, onSavePass, onDeletePass }) {
   const [formState, setFormState] = useState({
     name: '',
     tests: '',
     desc: '',
     image: ''
   });
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formState.name || !formState.desc) return;
 
@@ -20,29 +22,41 @@ export default function RecentlyPassedForm({ passes, onAddPass }) {
       image: formState.image || '/driving-instructor-worcester.webp'
     };
 
-    onAddPass(entry, editingIndex);
-    setFormState({ name: '', tests: '', desc: '', image: '' });
-    setEditingIndex(null);
-  };
-
-  const handleDeletePass = (index) => {
-    onAddPass(null, index, true);
-    if (editingIndex === index) {
+    setSubmitting(true);
+    setError(null);
+    const result = await onSavePass(entry, editingId);
+    if (result?.success === false) {
+      setError(result.error || 'Unable to save entry.');
+    } else {
       setFormState({ name: '', tests: '', desc: '', image: '' });
-      setEditingIndex(null);
+      setEditingId(null);
     }
+    setSubmitting(false);
   };
 
-  const startEditPass = (index) => {
-    const entry = passes[index];
-    if (!entry) return;
+  const handleDeletePass = async (passId) => {
+    if (!passId) return;
+    setSubmitting(true);
+    setError(null);
+    const result = await onDeletePass(passId);
+    if (result?.success === false) {
+      setError(result.error || 'Unable to delete entry.');
+    } else if (editingId === passId) {
+      setFormState({ name: '', tests: '', desc: '', image: '' });
+      setEditingId(null);
+    }
+    setSubmitting(false);
+  };
+
+  const startEditPass = (pass) => {
+    if (!pass) return;
     setFormState({
-      name: entry.name || '',
-      tests: entry.tests || '',
-      desc: entry.desc || '',
-      image: entry.image || ''
+      name: pass.name || '',
+      tests: pass.tests || '',
+      desc: pass.desc || '',
+      image: pass.image || ''
     });
-    setEditingIndex(index);
+    setEditingId(pass.id);
   };
 
   const handleFileChange = (e) => {
@@ -61,7 +75,7 @@ export default function RecentlyPassedForm({ passes, onAddPass }) {
       <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-xl font-display font-bold text-dark">
-            {editingIndex !== null ? 'Edit Recently Passed' : 'Add Recently Passed'}
+            {editingId ? 'Edit Recently Passed' : 'Add Recently Passed'}
           </h3>
           <p className="text-sm text-medium-grey">Add a learner success story to the carousel.</p>
         </div>
@@ -120,18 +134,25 @@ export default function RecentlyPassedForm({ passes, onAddPass }) {
               </div>
             )}
           </div>
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 text-sm text-red-700 border border-red-200">
+              {error}
+            </div>
+          )}
           <button
             type="submit"
-            className="w-full bg-learner-red text-white px-5 py-3 font-bold tracking-wide clip-angle shadow-lg hover:bg-dark transition-colors"
+            className="w-full bg-learner-red text-white px-5 py-3 font-bold tracking-wide clip-angle shadow-lg hover:bg-dark transition-colors disabled:opacity-60 disabled:pointer-events-none"
+            disabled={submitting}
           >
-            {editingIndex !== null ? 'Save Changes' : 'Add to Recently Passed'}
+            {editingId ? 'Save Changes' : 'Add to Recently Passed'}
           </button>
-          {editingIndex !== null && (
+          {editingId && (
             <button
               type="button"
               onClick={() => {
-                setEditingIndex(null);
+                setEditingId(null);
                 setFormState({ name: '', tests: '', desc: '', image: '' });
+                setError(null);
               }}
               className="w-full border-2 border-dark text-dark px-5 py-3 font-bold tracking-wide hover:bg-dark hover:text-white transition-colors"
             >
@@ -145,11 +166,13 @@ export default function RecentlyPassedForm({ passes, onAddPass }) {
       <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-xl font-display font-bold text-dark">Recent Passes</h3>
-          <span className="text-sm text-medium-grey">{passes.length} listed</span>
+          <span className="text-sm text-medium-grey">
+            {passes.length} total {loading && '(loading...)'}
+          </span>
         </div>
         <div className="p-6 grid md:grid-cols-2 gap-4">
-          {passes.map((p, i) => (
-            <div key={`${p.name}-${i}`} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          {passes.map((p) => (
+            <div key={p.id} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
               <div className="h-32 bg-gray-100">
                 <img
                   src={p.image || '/driving-instructor-worcester.webp'}
@@ -168,15 +191,16 @@ export default function RecentlyPassedForm({ passes, onAddPass }) {
                 <div className="flex gap-2 mt-3">
                   <button
                     type="button"
-                    onClick={() => startEditPass(i)}
+                    onClick={() => startEditPass(p)}
                     className="px-3 py-2 text-xs font-semibold border border-dark text-dark hover:bg-dark hover:text-white transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDeletePass(i)}
-                    className="px-3 py-2 text-xs font-semibold border border-learner-red text-learner-red hover:bg-learner-red hover:text-white transition-colors"
+                    onClick={() => handleDeletePass(p.id)}
+                    className="px-3 py-2 text-xs font-semibold border border-learner-red text-learner-red hover:bg-learner-red hover:text-white transition-colors disabled:opacity-60"
+                    disabled={submitting}
                   >
                     Delete
                   </button>
@@ -184,6 +208,11 @@ export default function RecentlyPassedForm({ passes, onAddPass }) {
               </div>
             </div>
           ))}
+          {!passes.length && !loading && (
+            <div className="col-span-2 text-center text-medium-grey text-sm">
+              No passes yet. Add your first learner success story!
+            </div>
+          )}
         </div>
       </div>
     </div>
