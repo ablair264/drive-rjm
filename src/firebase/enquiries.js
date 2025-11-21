@@ -5,7 +5,9 @@ import {
   query,
   orderBy,
   limit,
-  getDocs
+  getDocs,
+  doc,
+  updateDoc
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -29,6 +31,27 @@ export async function createEnquiry(enquiryData) {
     console.error('Error creating enquiry:', error);
     return { success: false, error: error.message };
   }
+}
+
+export async function updateEnquiry(enquiryId, updates) {
+  try {
+    const ref = doc(db, ENQUIRIES_COLLECTION, enquiryId);
+    await updateDoc(ref, {
+      ...updates,
+      updated_at: serverTimestamp()
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating enquiry:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function setEnquiryStatus(enquiryId, status, extra = {}) {
+  return await updateEnquiry(enquiryId, {
+    status,
+    ...extra
+  });
 }
 
 export async function getRecentEnquiries(max = 50) {

@@ -25,6 +25,7 @@ export default function AdminPage() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const { enquiries, loading: enquiriesLoading } = useEnquiries();
+  const [lessonStudentId, setLessonStudentId] = useState(null);
 
   // Navigation handlers
   const handlePrevious = () => {
@@ -53,11 +54,19 @@ export default function AdminPage() {
     setShowDayDetailModal(true);
   };
 
-  const handleCreateLesson = (date = null) => {
+  const handleCreateLesson = (date = null, studentId = null) => {
     if (date) {
       setSelectedDate(date);
     }
+    if (studentId) {
+      setLessonStudentId(studentId);
+    }
     setShowCreateLessonModal(true);
+  };
+
+  const handleBookLessonFromStudent = (studentId) => {
+    if (!studentId) return;
+    handleCreateLesson(null, studentId);
   };
 
   const handleLessonClick = (lesson) => {
@@ -87,7 +96,7 @@ export default function AdminPage() {
         />
 
         {/* Content Area */}
-        <main className="flex-1 overflow-auto">
+        <main key={activeTab} className="flex-1 overflow-auto">
           {activeTab === 'dashboard' && (
             <div className="p-8">
               <DashboardTab enquiries={enquiries} />
@@ -129,7 +138,10 @@ export default function AdminPage() {
 
           {activeTab === 'students' && (
             <div className="p-8">
-              <StudentsTab onCreateStudent={() => setShowCreateStudentModal(true)} />
+              <StudentsTab
+                onCreateStudent={() => setShowCreateStudentModal(true)}
+                onBookLesson={handleBookLessonFromStudent}
+              />
             </div>
           )}
 
@@ -147,8 +159,10 @@ export default function AdminPage() {
         onClose={() => {
           setShowCreateLessonModal(false);
           setSelectedDate(null);
+          setLessonStudentId(null);
         }}
         initialDate={selectedDate}
+        initialStudentId={lessonStudentId}
       />
 
       <DayDetailModal

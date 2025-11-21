@@ -3,34 +3,10 @@ import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 
-const normalizeStorageBucket = (bucket, fallbackProject) => {
-  if (!bucket && fallbackProject) {
-    return `${fallbackProject}.appspot.com`;
-  }
-
-  if (bucket?.endsWith('.firebasestorage.app')) {
-    return bucket.replace(/\.firebasestorage\.app$/, '.appspot.com');
-  }
-
-  return bucket || undefined;
-};
-
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-const storageBucket = normalizeStorageBucket(
-  import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  projectId
-);
-
-if (
-  import.meta.env.VITE_FIREBASE_STORAGE_BUCKET &&
-  storageBucket !== import.meta.env.VITE_FIREBASE_STORAGE_BUCKET
-) {
-  console.warn(
-    `[firebase] Overriding storage bucket ${
-      import.meta.env.VITE_FIREBASE_STORAGE_BUCKET
-    } with ${storageBucket}. Storage buckets must use the *.appspot.com domain.`
-  );
-}
+const storageBucket =
+  import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ||
+  (projectId ? `${projectId}.appspot.com` : undefined);
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,

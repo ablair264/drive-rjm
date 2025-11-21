@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import {
   createStudent as createStudentFirebase,
@@ -27,18 +27,18 @@ export function StudentsProvider({ children }) {
   useEffect(() => {
     const studentsQuery = query(
       collection(db, 'students'),
-      where('archived', '!=', true),
-      orderBy('archived'),
       orderBy('name')
     );
 
     const unsubscribe = onSnapshot(
       studentsQuery,
       (snapshot) => {
-        const studentsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const studentsData = snapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(student => student.archived !== true);
         setStudents(studentsData);
         setLoading(false);
         setError(null);

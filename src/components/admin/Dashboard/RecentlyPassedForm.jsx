@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { ImagePlus, Loader2 } from 'lucide-react';
+import { convertImageToWebp } from './imageUtils';
 
 export default function RecentlyPassedForm({ passes, loading, onSavePass, onDeletePass }) {
   const [formState, setFormState] = useState({
@@ -10,6 +12,9 @@ export default function RecentlyPassedForm({ passes, loading, onSavePass, onDele
   const [editingId, setEditingId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [processingImage, setProcessingImage] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,14 +64,37 @@ export default function RecentlyPassedForm({ passes, loading, onSavePass, onDele
     setEditingId(pass.id);
   };
 
+  const triggerFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+
+
+  const handleProcessedImage = async (file) => {
+    if (!file) return;
+    setProcessingImage(true);
+    setError(null);
+    try {
+      const processed = await convertImageToWebp(file);
+      setFormState((prev) => ({ ...prev, image: processed }));
+    } catch (err) {
+      console.error(err);
+      setError('Unable to process image. Please try a different file.');
+    }
+    setProcessingImage(false);
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormState((prev) => ({ ...prev, image: reader.result }));
-    };
-    reader.readAsDataURL(file);
+    handleProcessedImage(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleProcessedImage(e.dataTransfer.files[0]);
+    }
   };
 
   return (
@@ -110,25 +138,65 @@ export default function RecentlyPassedForm({ passes, loading, onSavePass, onDele
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-bold text-dark mb-2">Image (upload or URL)</label>
-            <input
-              className="w-full px-4 py-3 bg-white border-2 border-gray-200 focus:border-learner-red focus:outline-none transition-colors"
-              value={formState.image}
-              onChange={(e) => setFormState({ ...formState, image: e.target.value })}
-              placeholder="/driving-instructor-worcester.webp or paste URL"
-            />
-            <div className="mt-2 flex items-center gap-3">
-              <label className="cursor-pointer bg-light-grey px-4 py-2 border border-dashed border-gray-300 text-sm font-semibold text-dark hover:border-learner-red transition-colors">
-                Upload file
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              </label>
-              <span className="text-xs text-medium-grey">Upload local image (base64)</span>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-bold text-dark mb-2">Image URL (optional)</label>
+              <input
+                className="w-full px-4 py-3 bg-white border-2 border-gray-200 focus:border-learner-red focus:outline-none transition-colors"
+                value={formState.image}
+                onChange={(e) => setFormState({ ...formState, image: e.target.value })}
+                placeholder="Paste an external image URL"
+              />
             </div>
+
+            <div>
+              <label className="block text-sm font-bold text-dark mb-2">Upload image</label>
+              <div
+                onClick={triggerFileDialog}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                }}
+                onDrop={handleDrop}
+                className={`relative border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors ${
+                  isDragging ? 'border-learner-red bg-learner-red/5' : 'border-gray-300 hover:border-learner-red'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div className="flex flex-col items-center gap-2 text-medium-grey">
+                  {processingImage ? (
+                    <Loader2 className="w-8 h-8 animate-spin text-learner-red" />
+                  ) : (
+                    <ImagePlus className="w-10 h-10 text-learner-red" />
+                  )}
+                  <p className="text-dark font-semibold">
+                    Click to browse or drag & drop an image
+                  </p>
+                  <p className="text-xs">
+                    We’ll convert it to WEBP and resize to 1600×900px for the homepage carousel.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {formState.image && (
               <div className="mt-3">
                 <p className="text-xs text-medium-grey mb-1">Preview:</p>
-                <div className="h-28 w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                <div className="h-32 w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                   <img src={formState.image} alt="Preview" className="w-full h-full object-cover" />
                 </div>
               </div>

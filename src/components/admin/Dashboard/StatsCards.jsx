@@ -1,23 +1,29 @@
 import { Inbox, CalendarClock, ClipboardCheck } from 'lucide-react';
 
-export default function StatsCards({ enquiriesCount }) {
+export default function StatsCards({
+  enquiriesCount,
+  lessonsThisWeek,
+  newLearners,
+  upcomingTests,
+  nextTestLabel
+}) {
   const cards = [
     {
       title: 'Open Enquiries',
       value: enquiriesCount.toString(),
-      sub: 'Live submissions',
+      sub: 'Live submissions awaiting reply',
       Icon: Inbox
     },
     {
       title: 'Lessons This Week',
-      value: '24',
-      sub: '6 new learners',
+      value: lessonsThisWeek.toString(),
+      sub: `${newLearners} new learners`,
       Icon: CalendarClock
     },
     {
       title: 'Upcoming Tests',
-      value: '5',
-      sub: 'Next: Fri 10:30',
+      value: upcomingTests.toString(),
+      sub: nextTestLabel ? `Next: ${nextTestLabel}` : 'No tests booked',
       Icon: ClipboardCheck
     }
   ];

@@ -3,9 +3,12 @@ import { Dialog } from '@headlessui/react';
 import { X, Lightbulb, AlertTriangle } from 'lucide-react';
 import { useLessons } from '../../../contexts/LessonsContext';
 import { useStudents } from '../../../contexts/StudentsContext';
+import { useTests } from '../../../contexts/TestsContext';
 import { validateLessonForm } from '../../../utils/validation';
 import { formatPostcode } from '../../../utils/postcodeHelpers';
 import { computeRecommendedSlot, checkTimeConflict } from '../../../utils/lessonRecommendations';
+import { isSameDay } from '../../../utils/dateHelpers';
+import { timeRangesOverlap } from '../../../utils/timeHelpers';
 import StudentDropdown from './StudentDropdown';
 import CreateStudentModal from '../Students/CreateStudentModal';
 
@@ -17,23 +20,36 @@ const DURATION_OPTIONS = [
   { value: 180, label: '3 hours' }
 ];
 
-export default function CreateLessonModal({ isOpen, onClose, initialDate = null }) {
+export default function CreateLessonModal({ isOpen, onClose, initialDate = null, initialStudentId = null }) {
   const { createLesson, lessons } = useLessons();
   const { getStudentById } = useStudents();
+  const { tests } = useTests();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showStudentModal, setShowStudentModal] = useState(false);
   const [recommendation, setRecommendation] = useState(null);
   const [timeConflict, setTimeConflict] = useState(null);
+  const [testConflict, setTestConflict] = useState(null);
 
+  const defaultDate = initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
   const [formData, setFormData] = useState({
-    student_id: '',
-    date: initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    student_id: initialStudentId || '',
+    date: defaultDate,
     start_time: '09:00',
     duration_minutes: 120,
     start_postcode: '',
     end_postcode: ''
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(prev => ({
+        ...prev,
+        student_id: initialStudentId || '',
+        date: initialDate ? initialDate.toISOString().split('T')[0] : prev.date
+      }));
+    }
+  }, [initialStudentId, initialDate, isOpen]);
 
   // Auto-fill postcode when student is selected
   useEffect(() => {
@@ -74,14 +90,35 @@ export default function CreateLessonModal({ isOpen, onClose, initialDate = null 
         lessons
       );
       setTimeConflict(conflict);
+
+      const testClash = tests.find((test) => {
+        if (test.status !== 'booked' || !test.date) return false;
+        if (!isSameDay(test.date, dateObj)) return false;
+        return timeRangesOverlap(
+          formData.start_time,
+          formData.duration_minutes,
+          test.time,
+          120
+        );
+      });
+      setTestConflict(testClash || null);
+    } else {
+      setTimeConflict(null);
+      setTestConflict(null);
     }
-  }, [formData.date, formData.start_time, formData.duration_minutes, lessons]);
+  }, [formData.date, formData.start_time, formData.duration_minutes, lessons, tests]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+    if (testConflict) {
+      const confirmCreate = window.confirm(
+        `This lesson overlaps with a booked test for ${testConflict.student_name} at ${testConflict.time}. Create anyway?`
+      );
+      if (!confirmCreate) return;
     }
   };
 
@@ -133,7 +170,7 @@ export default function CreateLessonModal({ isOpen, onClose, initialDate = null 
 
   const resetForm = () => {
     setFormData({
-      student_id: '',
+      student_id: initialStudentId || '',
       date: initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       start_time: '09:00',
       duration_minutes: 120,
@@ -221,41 +258,60 @@ export default function CreateLessonModal({ isOpen, onClose, initialDate = null 
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Start Time <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="time"
-                      value={formData.start_time}
-                      onChange={(e) => handleChange('start_time', e.target.value)}
-                      className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-learner-red focus:border-transparent ${
-                        errors.start_time ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {recommendation && recommendation.time !== formData.start_time && (
-                      <button
-                        type="button"
-                        onClick={handleUseRecommendation}
-                        className="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm whitespace-nowrap"
-                        title={recommendation.reason}
-                      >
-                        Use {recommendation.time}
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    type="time"
+                    value={formData.start_time}
+                    onChange={(e) => handleChange('start_time', e.target.value)}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-learner-red focus:border-transparent ${
+                      errors.start_time ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    required
+                  />
                   {errors.start_time && <p className="mt-1 text-sm text-red-500">{errors.start_time}</p>}
                 </div>
               </div>
 
               {/* Recommendation Display */}
               {recommendation && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
-                  <Lightbulb size={20} className="flex-shrink-0 text-blue-600 mt-0.5" />
-                  <div className="text-sm text-blue-800">
-                    <strong>Recommendation:</strong> {recommendation.reason}
-                    {recommendation.time !== formData.start_time && (
-                      <span> (Suggested time: {recommendation.time})</span>
+                <div className="mb-6 p-5 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-white shadow-sm">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="h-12 w-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shadow-inner">
+                        <Lightbulb size={22} />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-500">
+                          Smart Recommendation
+                        </div>
+                        <p className="text-base font-semibold text-dark mt-1">{recommendation.reason}</p>
+                        <p className="text-sm text-blue-800 mt-1">
+                          Suggested time:{' '}
+                          <span className="font-bold text-blue-900">{recommendation.time}</span>
+                        </p>
+                      </div>
+                    </div>
+                    {recommendation.time !== formData.start_time ? (
+                      <button
+                        type="button"
+                        onClick={handleUseRecommendation}
+                        className="px-5 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors"
+                      >
+                        Apply {recommendation.time}
+                      </button>
+                    ) : (
+                      <div className="px-4 py-2 rounded-full bg-green-50 text-green-700 text-sm font-semibold">
+                        Using recommended slot
+                      </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Conflict warnings */}
+              {testConflict && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  <strong>Test clash:</strong> {testConflict.student_name} has a booked test at{' '}
+                  {testConflict.time} on this day ({testConflict.location}). Adjust the lesson time or confirm when saving.
                 </div>
               )}
 

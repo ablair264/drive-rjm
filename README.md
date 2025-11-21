@@ -114,7 +114,7 @@ The admin dashboard stores students and lessons in Firestore. A helper script se
    FIREBASE_SERVICE_ACCOUNT=/path/to/key.json npm run setup:firestore
    ```
    The script creates template docs for `students`, `lessons`, `recentlyPassed`, and `enquiries` collections so the dashboard has sample data.
-4. **Deploy indexes**: Firestore requires composite indexes for the dashboard queries. Deploy them with:
+4. **Deploy indexes**: Firestore requires composite indexes for the dashboard queries (students, lessons, tests). Deploy them with:
    ```bash
    firebase deploy --only firestore:indexes
    ```

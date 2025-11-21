@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { createEnquiry } from '../firebase/enquiries';
+import { createEnquiry, setEnquiryStatus, updateEnquiry } from '../firebase/enquiries';
 
 const EnquiriesContext = createContext();
 
@@ -53,11 +53,21 @@ export function EnquiriesProvider({ children }) {
     return await createEnquiry(entry);
   };
 
+  const updateEnquiryStatus = async (enquiryId, status, extra = {}) => {
+    return await setEnquiryStatus(enquiryId, status, extra);
+  };
+
+  const editEnquiry = async (enquiryId, updates) => {
+    return await updateEnquiry(enquiryId, updates);
+  };
+
   const value = {
     enquiries,
     loading,
     error,
-    addEnquiry
+    addEnquiry,
+    updateEnquiryStatus,
+    editEnquiry
   };
 
   return (

@@ -1,10 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useStudents } from '../../../contexts/StudentsContext';
+import { useLessons } from '../../../contexts/LessonsContext';
 import { Search, UserPlus } from 'lucide-react';
+import StudentDetailModal from './StudentDetailModal';
 
-export default function StudentsTab({ onCreateStudent }) {
+export default function StudentsTab({ onCreateStudent, onBookLesson }) {
   const { students, loading } = useStudents();
+  const { lessons } = useLessons();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const hoursByStudent = useMemo(() => {
+    const totals = {};
+    lessons.forEach((lesson) => {
+      if (!lesson.student_id || lesson.status === 'cancelled') return;
+      const hours = (lesson.duration_minutes || 0) / 60;
+      totals[lesson.student_id] = (totals[lesson.student_id] || 0) + hours;
+    });
+    return totals;
+  }, [lessons]);
 
   const filteredStudents = students.filter((student) => {
     const query = searchQuery.toLowerCase();
@@ -23,6 +38,22 @@ export default function StudentsTab({ onCreateStudent }) {
       </div>
     );
   }
+
+  const handleOpenStudent = (student) => {
+    setSelectedStudent(student);
+    setIsDetailOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailOpen(false);
+    setSelectedStudent(null);
+  };
+
+  const handleBookFromModal = (studentId) => {
+    if (onBookLesson) {
+      onBookLesson(studentId);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -97,7 +128,7 @@ export default function StudentsTab({ onCreateStudent }) {
                   </td>
                   <td className="px-4 py-3 text-dark font-mono text-xs">{student.postcode}</td>
                   <td className="px-4 py-3 text-dark">
-                    {student.lesson_history?.hours_taught || 0}h
+                    {Math.round((hoursByStudent[student.id] || 0) * 10) / 10}h
                   </td>
                   <td className="px-4 py-3">
                     {student.lesson_history?.theory_passed ? (
@@ -112,12 +143,20 @@ export default function StudentsTab({ onCreateStudent }) {
                       : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      className="text-learner-red hover:text-red-700 font-semibold text-xs"
-                      onClick={() => console.log('Edit student:', student.id)}
-                    >
-                      Edit
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="text-learner-red hover:text-red-700 font-semibold text-xs"
+                        onClick={() => handleOpenStudent(student)}
+                      >
+                        View / Edit
+                      </button>
+                      <button
+                        className="text-dark hover:text-black font-semibold text-xs"
+                        onClick={() => onBookLesson && onBookLesson(student.id)}
+                      >
+                        Book Lesson
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -125,6 +164,14 @@ export default function StudentsTab({ onCreateStudent }) {
           </table>
         </div>
       </div>
+
+      <StudentDetailModal
+        student={selectedStudent}
+        isOpen={isDetailOpen}
+        onClose={handleCloseDetail}
+        onBookLesson={handleBookFromModal}
+        computedHours={selectedStudent ? hoursByStudent[selectedStudent.id] || 0 : 0}
+      />
     </div>
   );
 }
