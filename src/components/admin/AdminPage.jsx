@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { addMonths, subMonths, addWeeks, subWeeks } from 'date-fns';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
@@ -9,9 +9,13 @@ import AgendaView from './LessonPlanner/AgendaView';
 import CreateLessonModal from './LessonPlanner/CreateLessonModal';
 import DayDetailModal from './LessonPlanner/DayDetailModal';
 import CreateStudentModal from './Students/CreateStudentModal';
+import DashboardTab from './Dashboard/DashboardTab';
+import EnquiriesTab from './Enquiries/EnquiriesTab';
+import StudentsTab from './Students/StudentsTab';
+import TestsTab from './Tests/TestsTab';
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState('planner');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState('month');
   const [showCreateLessonModal, setShowCreateLessonModal] = useState(false);
@@ -19,6 +23,22 @@ export default function AdminPage() {
   const [showDayDetailModal, setShowDayDetailModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedLesson, setSelectedLesson] = useState(null);
+  const [enquiries, setEnquiries] = useState([]);
+
+  // Load enquiries from localStorage
+  useEffect(() => {
+    const storedEnquiries = localStorage.getItem('enquiries');
+    if (storedEnquiries) {
+      try {
+        const parsedEnquiries = JSON.parse(storedEnquiries);
+        if (Array.isArray(parsedEnquiries)) {
+          setEnquiries(parsedEnquiries);
+        }
+      } catch (e) {
+        console.error('Error loading enquiries:', e);
+      }
+    }
+  }, []);
 
   // Navigation handlers
   const handlePrevious = () => {
@@ -84,15 +104,13 @@ export default function AdminPage() {
         <main className="flex-1 overflow-auto">
           {activeTab === 'dashboard' && (
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-dark mb-4">Dashboard</h2>
-              <p className="text-gray-600">Dashboard content coming soon...</p>
+              <DashboardTab enquiries={enquiries} />
             </div>
           )}
 
           {activeTab === 'enquiries' && (
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-dark mb-4">Enquiries</h2>
-              <p className="text-gray-600">Enquiries content coming soon...</p>
+              <EnquiriesTab enquiries={enquiries} />
             </div>
           )}
 
@@ -125,15 +143,13 @@ export default function AdminPage() {
 
           {activeTab === 'students' && (
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-dark mb-4">Students</h2>
-              <p className="text-gray-600">Student management content coming soon...</p>
+              <StudentsTab onCreateStudent={() => setShowCreateStudentModal(true)} />
             </div>
           )}
 
           {activeTab === 'tests' && (
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-dark mb-4">Tests</h2>
-              <p className="text-gray-600">Test management content coming soon...</p>
+              <TestsTab />
             </div>
           )}
         </main>
