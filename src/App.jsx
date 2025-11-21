@@ -313,11 +313,14 @@ const ContactForm = ({ onClose, isModal = false, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (onSubmit) {
-      await onSubmit({
+      const result = await onSubmit({
         ...formData,
         source: isModal ? 'contact-modal' : 'contact-section',
         createdAt: new Date().toISOString()
       })
+      if (result?.success === false) {
+        return
+      }
     }
     if (isModal && onClose) {
       onClose()
@@ -857,11 +860,14 @@ const QuickContact = ({ postcodeCheckResult, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (onSubmit) {
-      await onSubmit({
+      const result = await onSubmit({
         ...formData,
         source: 'quick-contact',
         createdAt: new Date().toISOString()
       })
+      if (result?.success === false) {
+        return
+      }
     }
     // Reset form
     setFormData({
@@ -1342,6 +1348,38 @@ We offer this training in your tow vehicle with either your trailer/caravan or y
                   </a>
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showEnquirySuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowEnquirySuccess(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 text-center space-y-4"
+            >
+              <div className="text-4xl">🎉</div>
+              <h3 className="text-2xl font-display font-bold text-dark">Thanks for reaching out!</h3>
+              <p className="text-medium-grey">
+                We’ve received your enquiry and will get back to you as soon as possible.
+              </p>
+              <button
+                onClick={() => setShowEnquirySuccess(false)}
+                className="inline-flex items-center justify-center px-6 py-3 bg-learner-red text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Close
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -3093,13 +3131,19 @@ function App() {
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [bookingHours, setBookingHours] = useState(2)
   const [postcodeCheckResult, setPostcodeCheckResult] = useState(null)
+  const [showEnquirySuccess, setShowEnquirySuccess] = useState(false)
 
   const { isAdminAuthed, loading } = useAuth()
   const { passes: recentPasses, loading: passesLoading } = useRecentlyPassed()
   const { addEnquiry } = useEnquiries()
 
   const handleAddEnquiry = async (entry) => {
-    await addEnquiry(entry)
+    const result = await addEnquiry(entry)
+    if (result?.success === false) {
+      return result
+    }
+    setShowEnquirySuccess(true)
+    return result
   }
 
   const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
