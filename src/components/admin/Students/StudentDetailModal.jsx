@@ -160,7 +160,7 @@ export default function StudentDetailModal({ student, isOpen, onClose, onBookLes
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-      <div className="fixed inset-0 flex items-center justify-center p-4">
+      <div className="fixed inset-0 flex items-center justify-center p-4 sm:items-center sm:justify-center">
         <Dialog.Panel className="mx-auto max-w-4xl w-full bg-white rounded-2xl shadow-2xl max-h-[95vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
             <div>

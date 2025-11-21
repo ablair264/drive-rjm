@@ -70,13 +70,15 @@ export default function StudentsTab({ onCreateStudent, onBookLesson }) {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-learner-red focus:border-transparent"
             />
           </div>
-          <button
-            onClick={onCreateStudent}
-            className="flex items-center gap-2 bg-learner-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-          >
-            <UserPlus size={20} />
-            Add Student
-          </button>
+          <div className="hidden md:block">
+            <button
+              onClick={onCreateStudent}
+              className="flex items-center gap-2 bg-learner-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <UserPlus size={20} />
+              Add Student
+            </button>
+          </div>
         </div>
       </div>
 

@@ -21,7 +21,7 @@ const statusLabel = (status) => {
 };
 
 export default function EnquiriesTab({ enquiries, loading = false }) {
-  const { updateEnquiryStatus } = useEnquiries();
+  const { updateEnquiryStatus, removeEnquiry } = useEnquiries();
   const { createStudent } = useStudents();
   const [processingId, setProcessingId] = useState(null);
   const [error, setError] = useState(null);
@@ -74,6 +74,21 @@ export default function EnquiriesTab({ enquiries, loading = false }) {
     });
     setProcessingId(null);
     setSuccess('Enquiry converted to student and marked accordingly.');
+  };
+
+  const handleDelete = async (enquiryId) => {
+    const confirmed = window.confirm('Delete this enquiry? This action cannot be undone.');
+    if (!confirmed) return;
+    setProcessingId(enquiryId);
+    setError(null);
+    setSuccess(null);
+    const result = await removeEnquiry(enquiryId);
+    setProcessingId(null);
+    if (result?.success === false) {
+      setError(result.error || 'Unable to delete enquiry.');
+    } else {
+      setSuccess('Enquiry deleted.');
+    }
   };
 
   return (
@@ -175,6 +190,14 @@ export default function EnquiriesTab({ enquiries, loading = false }) {
                           Convert to student
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(q.id)}
+                        disabled={processingId === q.id}
+                        className="px-3 py-1 text-xs font-semibold border border-gray-300 text-medium-grey rounded hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -7,7 +7,8 @@ import {
   limit,
   getDocs,
   doc,
-  updateDoc
+  updateDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from './config';
 
@@ -52,6 +53,17 @@ export async function setEnquiryStatus(enquiryId, status, extra = {}) {
     status,
     ...extra
   });
+}
+
+export async function deleteEnquiry(enquiryId) {
+  try {
+    const ref = doc(db, ENQUIRIES_COLLECTION, enquiryId);
+    await deleteDoc(ref);
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting enquiry:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 export async function getRecentEnquiries(max = 50) {

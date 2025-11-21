@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(frontend-design:frontend-design)",
+      "Bash(mkdir:*)",
+      "Bash(convert:*)",
+      "Bash(npm run build:*)",
+      "Skill(frontend-responsive)",
+      "Bash(npm run dev:*)",
+      "Skill(superpowers:brainstorming)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd comprehensive admin & lesson planner redesign document\n\nDesign document covers:\n- Firebase architecture with real-time sync\n- Student management system with detailed profiles\n- Intuitive lesson creation with smart recommendations\n- Professional calendar (Week/Month/Agenda views)\n- Component-based architecture for maintainability\n- Complete technical implementation details\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "SlashCommand(/superpowers:write-plan)",
+      "Skill(superpowers:writing-plans)",
+      "Bash(git commit:*)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Bash(npm install:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(test:*)",
+      "Bash(git config:*)",
+      "Bash(.git/logs/HEAD)",
+      "Bash(chmod:*)",
+      "Bash(getfacl:*)",
+      "Bash(lsattr:*)",
+      "Bash(node -e:*)",
+      "Bash(tree:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

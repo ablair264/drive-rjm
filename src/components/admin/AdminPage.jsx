@@ -26,6 +26,12 @@ export default function AdminPage() {
   const [selectedLesson, setSelectedLesson] = useState(null);
   const { enquiries, loading: enquiriesLoading } = useEnquiries();
   const [lessonStudentId, setLessonStudentId] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
 
   // Navigation handlers
   const handlePrevious = () => {
@@ -82,9 +88,11 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="hidden md:block md:w-64 flex-shrink-0">
+        <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -92,7 +100,9 @@ export default function AdminPage() {
         <AdminHeader
           onCreateLesson={() => handleCreateLesson()}
           onCreateStudent={() => setShowCreateStudentModal(true)}
+          onCreateTest={() => setCreateTestModalOpen(true)}
           currentTab={activeTab}
+          onToggleSidebar={() => setSidebarOpen(true)}
         />
 
         {/* Content Area */}
@@ -152,6 +162,18 @@ export default function AdminPage() {
           )}
         </main>
       </div>
+
+      {sidebarOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/60 backdrop-blur-sm"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <div className="w-4/5 max-w-xs h-full bg-white shadow-2xl animate-slide-in">
+            <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <CreateLessonModal

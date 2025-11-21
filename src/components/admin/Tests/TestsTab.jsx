@@ -90,7 +90,7 @@ export default function TestsTab() {
             </div>
             <h3 className="text-2xl font-display font-bold text-dark">Manage bookings</h3>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="hidden md:flex flex-wrap gap-2">
             {STATUS_FILTERS.map((item) => (
               <button
                 key={item.id}
@@ -105,13 +105,22 @@ export default function TestsTab() {
               </button>
             ))}
           </div>
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-learner-red text-white px-4 py-2 rounded-lg font-semibold shadow hover:bg-red-700 transition-colors"
-          >
-            <CalendarPlus size={18} />
-            Book Test
-          </button>
+          <div className="w-full md:hidden">
+            <label className="text-xs font-semibold text-medium-grey uppercase tracking-wide">
+              Filter
+            </label>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-learner-red focus:border-transparent text-sm"
+            >
+              {STATUS_FILTERS.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         {(tableError || tableSuccess) && (
           <div className="text-sm">

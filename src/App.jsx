@@ -1353,37 +1353,6 @@ We offer this training in your tow vehicle with either your trailer/caravan or y
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showEnquirySuccess && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowEnquirySuccess(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 text-center space-y-4"
-            >
-              <div className="text-4xl">🎉</div>
-              <h3 className="text-2xl font-display font-bold text-dark">Thanks for reaching out!</h3>
-              <p className="text-medium-grey">
-                We’ve received your enquiry and will get back to you as soon as possible.
-              </p>
-              <button
-                onClick={() => setShowEnquirySuccess(false)}
-                className="inline-flex items-center justify-center px-6 py-3 bg-learner-red text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Close
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   )
 }
@@ -3190,6 +3159,38 @@ function App() {
       </main>
       <Footer />
       <WhatsAppButton />
+
+      <AnimatePresence>
+        {showEnquirySuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowEnquirySuccess(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 text-center space-y-4"
+            >
+              <div className="text-4xl text-learner-red">✓</div>
+              <h3 className="text-2xl font-display font-bold text-dark">Thanks for reaching out!</h3>
+              <p className="text-medium-grey">
+                We’ve received your enquiry and will get back to you as soon as possible.
+              </p>
+              <button
+                onClick={() => setShowEnquirySuccess(false)}
+                className="inline-flex items-center justify-center px-6 py-3 bg-learner-red text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Contact Modal */}
       <AnimatePresence>
