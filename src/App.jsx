@@ -7,6 +7,9 @@ import {
   Users, ClipboardCheck, CalendarClock, ArrowLeftCircle, ArrowRightCircle
 } from 'lucide-react'
 import SEO from './components/SEO'
+import AdminLogin from './components/admin/AdminLogin'
+import AdminPage from './components/admin/AdminPage'
+import { useAuth } from './contexts/AuthContext'
 
 // Default Recently Passed entries
 const defaultPassed = [
@@ -3965,7 +3968,8 @@ function App() {
   const [postcodeCheckResult, setPostcodeCheckResult] = useState(null)
   const [recentlyPassed, setRecentlyPassed] = useState(defaultPassed)
   const [enquiries, setEnquiries] = useState([])
-  const [isAdminAuthed, setIsAdminAuthed] = useState(false)
+
+  const { isAdminAuthed, loading } = useAuth()
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -3991,8 +3995,6 @@ function App() {
           // ignore parse errors
         }
       }
-      const authed = localStorage.getItem('adminAuthed') === 'true'
-      setIsAdminAuthed(authed)
     }
   }, [])
 
@@ -4027,31 +4029,20 @@ function App() {
     setEnquiries((prev) => [entry, ...prev])
   }
 
-  const handleLogin = (username, password) => {
-    if (username === 'rowan' && password === '123') {
-      setIsAdminAuthed(true)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('adminAuthed', 'true')
-      }
-      return true
-    }
-    return false
-  }
-
-  const handleLogout = () => {
-    setIsAdminAuthed(false)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('adminAuthed')
-    }
-  }
-
   const isAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
 
   if (isAdmin) {
-    if (!isAdminAuthed) {
-      return <AdminLogin onLogin={handleLogin} />
+    if (loading) {
+      return <div className="min-h-screen bg-dark flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
     }
-    return <AdminPage passes={recentlyPassed} enquiries={enquiries} onAddPass={handleAddPassed} onLogout={handleLogout} />
+
+    if (!isAdminAuthed) {
+      return <AdminLogin />
+    }
+
+    return <AdminPage />
   }
 
   return (
